@@ -56,6 +56,8 @@ int main(int argc, char* argv[]) {
     if (!pOutputBits) {
         printf("\nCan't allocate memory for image, required size is %lu",
                nReqSize);
+        delete[] pInputBits;
+        pInputBits = nullptr;
         return -1;
     }
 
@@ -73,8 +75,19 @@ int main(int argc, char* argv[]) {
     if (NPngProc::writePngFile(szOutputFileName, pInputBits, nWidth, nHeight,
                                nBPP) == NPngProc::PNG_ERROR) {
         printf("\nError ocuured during png file was written");
+
+        delete[] pInputBits;
+        pInputBits = nullptr;
+        delete[] pOutputBits;
+        pOutputBits = nullptr;
+
         return -1;
     }
+
+    delete[] pInputBits;
+    pInputBits = nullptr;
+    delete[] pOutputBits;
+    pOutputBits = nullptr;
 
     return 0;
 }

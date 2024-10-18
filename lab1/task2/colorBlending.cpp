@@ -45,19 +45,25 @@ int main(int argc, char* argv[]) {
     if (NPngProc::readPngFileGray(argv[1], pInputBits1, &nWidth1, &nHeight1) ==
         NPngProc::PNG_ERROR) {
         printf("Error reading image data");
+        delete[] pInputBits1;
+        pInputBits1 = nullptr;
+
         return -1;
     }
 
     size_t nReqSize2 = NPngProc::readPngFile(argv[2], 0, 0, 0, 0);
     if (nReqSize2 == NPngProc::PNG_ERROR) {
         printf("Error occurred while reading PNG file");
-
+        delete[] pInputBits1;
+        pInputBits1 = nullptr;
         return -1;
     }
 
     unsigned char* pInputBits2 = new unsigned char[nReqSize2];
     if (!pInputBits2) {
         printf("Can't allocate memory");
+        delete[] pInputBits1;
+        pInputBits1 = nullptr;
         return -1;
     }
     CBitsPtrGuard InputBitsPtrGuard2(&pInputBits2);
@@ -65,18 +71,30 @@ int main(int argc, char* argv[]) {
     if (NPngProc::readPngFileGray(argv[2], pInputBits2, &nWidth2, &nHeight2) ==
         NPngProc::PNG_ERROR) {
         printf("Error reading image data");
+        delete[] pInputBits1;
+        pInputBits1 = nullptr;
+        delete[] pInputBits2;
+        pInputBits2 = nullptr;
         return -1;
     }
 
     size_t nReqSize3 = NPngProc::readPngFile(argv[3], 0, 0, 0, 0);
     if (nReqSize3 == NPngProc::PNG_ERROR) {
         printf("Error occurred while reading PNG file");
+        delete[] pInputBits1;
+        pInputBits1 = nullptr;
+        delete[] pInputBits2;
+        pInputBits2 = nullptr;
         return -1;
     }
 
     unsigned char* pInputBits3 = new unsigned char[nReqSize3];
     if (!pInputBits3) {
         printf("Can't allocate memory");
+        delete[] pInputBits1;
+        pInputBits1 = nullptr;
+        delete[] pInputBits2;
+        pInputBits2 = nullptr;
         return -1;
     }
     CBitsPtrGuard InputBitsPtrGuard3(&pInputBits3);
@@ -84,12 +102,24 @@ int main(int argc, char* argv[]) {
     if (NPngProc::readPngFileGray(argv[3], pInputBits3, &nWidthAlpha,
                                   &nHeightAlpha) == NPngProc::PNG_ERROR) {
         printf("Error reading image data");
+        delete[] pInputBits1;
+        pInputBits1 = nullptr;
+        delete[] pInputBits2;
+        pInputBits2 = nullptr;
+        delete[] pInputBits3;
+        pInputBits3 = nullptr;
         return -1;
     }
 
     if (nWidth1 != nWidth2 || nWidth1 != nWidthAlpha || nHeight1 != nHeight2 ||
         nHeight2 != nHeightAlpha) {
         printf("Input images must have the same dimensions");
+        delete[] pInputBits1;
+        pInputBits1 = nullptr;
+        delete[] pInputBits2;
+        pInputBits2 = nullptr;
+        delete[] pInputBits3;
+        pInputBits3 = nullptr;
         return -1;
     }
 
@@ -97,6 +127,12 @@ int main(int argc, char* argv[]) {
     if (!pOutputBits) {
         printf("\nCan't allocate memory for image, required size is %lu",
                nReqSize1);
+        delete[] pInputBits1;
+        pInputBits1 = nullptr;
+        delete[] pInputBits2;
+        pInputBits2 = nullptr;
+        delete[] pInputBits3;
+        pInputBits3 = nullptr;
         return -1;
     }
 
@@ -120,8 +156,27 @@ int main(int argc, char* argv[]) {
     if (NPngProc::writePngFile(outputFileName.c_str(), pOutputBits, nWidth1,
                                nHeight1, nBPP) == NPngProc::PNG_ERROR) {
         printf("\nError ocuured during png file was written");
+        delete[] pInputBits1;
+        pInputBits1 = nullptr;
+        delete[] pInputBits2;
+        pInputBits2 = nullptr;
+        delete[] pInputBits3;
+        pInputBits3 = nullptr;
+
+        delete[] pOutputBits;
+        pOutputBits = nullptr;
+
         return -1;
     }
+    delete[] pInputBits1;
+    pInputBits1 = nullptr;
+    delete[] pInputBits2;
+    pInputBits2 = nullptr;
+    delete[] pInputBits3;
+    pInputBits3 = nullptr;
+
+    delete[] pOutputBits;
+    pOutputBits = nullptr;
 
     return 0;
 }
