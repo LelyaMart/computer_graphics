@@ -1,5 +1,7 @@
 #include "utils.h"
 
+#include "checkIntersections.h"
+
 void set_pixel(cv::Mat& image, int x, int y, const cv::Vec3b& color) {
     if (x >= 0 && x < image.cols && y >= 0 && y < image.rows) {
         image.at<cv::Vec3b>(y, x) = color;
@@ -112,14 +114,57 @@ void transformCoordinates(double x, double y, int& xOut, int& yOut,
     yOut = static_cast<int>(std::round(windowHeight - scale - y * scale));
 }
 
-// int main() {
-//     cv::Mat image = cv::Mat::zeros(400, 400, CV_8UC3);
+void drawPolygon(cv::Mat& image, double vertices[][2], int numVertices,
+                 const cv::Vec3b& color, int scale) {
+    for (int i = 0; i < numVertices; i++) {
+        double x1 = vertices[i][0];
+        double y1 = vertices[i][1];
 
-//     cv::Vec3b red(0, 0, 255);
+        double x2, y2;
+        if (i + 1 < numVertices) {
+            x2 = vertices[i + 1][0];
+            y2 = vertices[i + 1][1];
+        } else {
+            x2 = vertices[0][0];
+            y2 = vertices[0][1];
+        }
 
-//     drawLine(image, 10, 10, 300, 200, red);
+        int x1Int, y1Int, x2Int, y2Int;
 
-//     cv::imshow("Line", image);
-//     cv::waitKey(0);
-//     return 0;
-// }
+        transformCoordinates(x1, y1, x1Int, y1Int, image.cols, image.rows,
+                             scale);
+        transformCoordinates(x2, y2, x2Int, y2Int, image.cols, image.rows,
+                             scale);
+
+        drawLine(image, x1Int, y1Int, x2Int, y2Int, color);
+    }
+}
+
+int isConvex(double vertices[][2], int numVertices) {
+    int initialSide = 0;
+    double signedArea = 0.0;
+
+    for (int i = 0; i < numVertices; ++i) {
+        double x1 = vertices[i][0];
+        double y1 = vertices[i][1];
+        double x2 = vertices[(i + 1) % numVertices][0];
+        double y2 = vertices[(i + 1) % numVertices][1];
+
+        double nextX = vertices[(i + 2) % numVertices][0];
+        double nextY = vertices[(i + 2) % numVertices][1];
+
+        CLPointType position = classify(x1, y1, x2, y2, nextX, nextY);
+
+        if (position == LEFT || position == RIGHT) {
+            int currentSide = (position == LEFT) ? 1 : -1;
+
+            if (initialSide == 0) {
+                initialSide = currentSide;
+            } else if (initialSide != currentSide) {
+                return 0;
+            }
+        }
+    }
+
+    return -1 * initialSide;
+}
