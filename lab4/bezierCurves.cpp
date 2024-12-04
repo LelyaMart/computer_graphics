@@ -53,8 +53,6 @@ void drawBezierCurve(double P[][2], int order, cv::Mat& image,
         drawLine(image, x1Int, y1Int, x2Int, y2Int, color);
         previousPoint[0] = currentPoint[0];
         previousPoint[1] = currentPoint[1];
-
-        std::cout << previousPoint[0] << " " << previousPoint[1] << std::endl;
     }
 }
 
