@@ -141,9 +141,9 @@ std::vector<Point> weilerAzertonAlgorithm(double verticesFirst[][2],
     if (numIntersections1 == 0) {
         if (isPointInPolygon(verticesFirst[0][0], verticesFirst[0][1],
                              verticesSecond, numVerticesSecond)) {
-            return {cyclicList1};
-        } else {
             return {};
+        } else {
+            return {cyclicList2};
         }
     }
 
@@ -285,7 +285,7 @@ int main() {
     }
 
     cv::imshow("Clip polygon", image);
-    cv::imwrite("./pictures/picture5.png", image);
+    cv::imwrite("./pictures/picture2.png", image);
     cv::waitKey(0);
     return 0;
 }
