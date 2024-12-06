@@ -54,10 +54,29 @@ void rotate(double& x, double& y, double& z, double axisX, double axisY,
     z = new_z;
 }
 
+void killBackFaces(cv::Mat& image, double vertices[8][2], double viewerZ,
+                   int scale, double xMin, double yMax, cv::Vec3b colors[6]) {
+    int faces[6][4] = {{0, 1, 2, 3}, {7, 6, 5, 4}, {0, 3, 7, 4},
+                       {0, 4, 5, 1}, {1, 5, 6, 2}, {2, 6, 7, 3}};
+
+    for (int i = 0; i < 6; i++) {
+        double faceVertices[4][2];
+        for (int j = 0; j < 4; j++) {
+            faceVertices[j][0] = vertices[faces[i][j]][0];
+            faceVertices[j][1] = vertices[faces[i][j]][1];
+        }
+        double nz = computeNormal(faceVertices);
+
+        if (nz * viewerZ >= 0) {
+            fill(image, faceVertices, scale, colors[i], xMin, yMax);
+        }
+    }
+}
+
 void animation(cv::Mat& image, double vertices[8][3],
                double projectionMatrix[4][4], double k, double axisX,
                double axisY, double axisZ, double xMin, double yMax, int scale,
-               const cv::Vec3b& color, cv::VideoWriter video) {
+               cv::Vec3b colors[6], cv::VideoWriter video) {
     double angle = 0.0;
 
     for (int i = 0; i < 300; ++i) {
@@ -76,15 +95,10 @@ void animation(cv::Mat& image, double vertices[8][3],
         double projectedVertices[8][2];
         transformVertices(transformed, projectionMatrix, projectedVertices);
 
-        int transformedInt[8][2];
-        for (int i = 0; i < 8; i++) {
-            transformCoordinates(projectedVertices[i][0],
-                                 projectedVertices[i][1], transformedInt[i][0],
-                                 transformedInt[i][1], image.cols, image.rows,
-                                 scale, xMin, yMax);
-        }
+        double viewerZ = -1.0f;
 
-        drawPolygon(image, transformedInt, color);
+        killBackFaces(image, projectedVertices, viewerZ, scale, xMin, yMax,
+                      colors);
 
         cv::imshow("Projected polygon", image);
         video.write(image);
@@ -141,6 +155,15 @@ int main() {
 
     cv::Mat image = cv::Mat(windowSize, CV_8UC3, cv::Scalar(255, 255, 255));
 
+    cv::Vec3b colors[6];
+
+    colors[0] = cv::Vec3b(0, 255, 0);
+    colors[1] = cv::Vec3b(255, 0, 0);
+    colors[2] = cv::Vec3b(0, 0, 255);
+    colors[3] = cv::Vec3b(0, 255, 255);
+    colors[4] = cv::Vec3b(255, 255, 0);
+    colors[5] = cv::Vec3b(255, 0, 255);
+
     int needAnimation;
     std::cout << "Shoud it be animated?\n0 - No\n1 - Yes\n";
     std::cin >> needAnimation;
@@ -154,13 +177,13 @@ int main() {
         cv::Size windowSize =
             cv::Size(widht * scale + 2 * scale, height * scale);
         cv::VideoWriter video(
-            "./pictures/video3.avi",
+            "./pictures/video6.avi",
             cv::VideoWriter::fourcc('M', 'J', 'P', 'G'), fps,
             cv::Size(widht * scale + 2 * scale, height * scale));
 
         cv::Mat image = cv::Mat(windowSize, CV_8UC3, cv::Scalar(255, 255, 255));
         animation(image, vertices, projectionMatrix, k, x, y, z, xMin, yMax,
-                  scale, blue, video);
+                  scale, colors, video);
         video.release();
         cv::destroyAllWindows();
 
@@ -183,39 +206,12 @@ int main() {
             // cv::imwrite("./pictures/picture3.png", image);
             cv::waitKey(0);
         } else {
-            int faces[6][4] = {{0, 1, 2, 3}, {7, 5, 4, 3}, {0, 3, 7, 4},
-                               {0, 4, 5, 1}, {1, 5, 6, 2}, {2, 6, 7, 3}};
-
             double viewerZ = -1.0f;
-
-            for (int i = 0; i < 6; i++) {
-                double faceVertices[4][2];
-                for (int j = 0; j < 4; j++) {
-                    faceVertices[j][0] = projectedVertices[faces[i][j]][0];
-                    faceVertices[j][1] = projectedVertices[faces[i][j]][1];
-                }
-                double nz = computeNormal(faceVertices);
-
-                if (nz * viewerZ >= 0) {
-                    int transformedVertices[4][2];
-                    for (int j = 0; j < 4; j++) {
-                        transformCoordinates(projectedVertices[faces[i][j]][0],
-                                             projectedVertices[faces[i][j]][1],
-                                             transformedVertices[j][0],
-                                             transformedVertices[j][1], widht,
-                                             height, scale, xMin, yMax);
-                    }
-                    for (int j = 0; j < 4; j++) {
-                        drawLine(image, transformedVertices[j][0],
-                                 transformedVertices[j][1],
-                                 transformedVertices[(j + 1) % 4][0],
-                                 transformedVertices[(j + 1) % 4][1], blue);
-                    }
-                }
-            }
+            killBackFaces(image, projectedVertices, viewerZ, scale, xMin, yMax,
+                          colors);
 
             cv::imshow("Projected polygon", image);
-            cv::imwrite("./pictures/picture5.png", image);
+            // cv::imwrite("./pictures/picture5.png", image);
             cv::waitKey(0);
         }
     }

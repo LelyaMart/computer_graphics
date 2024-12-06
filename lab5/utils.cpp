@@ -190,3 +190,103 @@ double computeNormal(double vertices[4][2]) {
 
     return nz;
 }
+
+enum CLPointType { LEFT, RIGHT, BEYOND, BEHIND, BETWEEN, ORIGIN, DESTINATION };
+
+enum EType { TOUCHING, CROSS_LEFT, CROSS_RIGHT, INESSENTIAL };
+
+enum PType { INSIDE, OUTSIDE };
+
+CLPointType classify(double x1, double y1, double x2, double y2, double x,
+                     double y) {
+    double ax = x2 - x1;
+    double ay = y2 - y1;
+
+    double bx = x - x1;
+    double by = y - y1;
+
+    double s = ax * by - bx * ay;
+
+    if (s > 0) return LEFT;
+    if (s < 0) return RIGHT;
+
+    if ((ax * bx < 0) || (ay * by < 0)) return BEHIND;
+    if ((ax * ax + ay * ay) < (bx * bx + by * by)) return BEYOND;
+
+    if (x1 == x && y1 == y) return ORIGIN;
+    if (x2 == x && y2 == y) return DESTINATION;
+
+    return BETWEEN;
+}
+
+EType edgeType(double ox, double oy, double dx, double dy, double ax,
+               double ay) {
+    switch (classify(ox, oy, dx, dy, ax, ay)) {
+        case LEFT:
+            if (ay > oy && ay <= dy)
+                return CROSS_LEFT;
+            else
+                return INESSENTIAL;
+        case RIGHT:
+            if (ay > dy && ay <= oy)
+                return CROSS_RIGHT;
+            else
+                return INESSENTIAL;
+        case BETWEEN:
+        case ORIGIN:
+        case DESTINATION:
+            return TOUCHING;
+        default:
+            return INESSENTIAL;
+    }
+}
+
+PType pInPolygonEOMode(double x, double y, double vertices[][2],
+                       int numVertices = 4) {
+    int param = 0;
+
+    for (int i = 0; i < numVertices; i++) {
+        switch (edgeType(vertices[i][0], vertices[i][1],
+                         vertices[(i + 1) % numVertices][0],
+                         vertices[(i + 1) % numVertices][1], x, y)) {
+            case TOUCHING:
+                return INSIDE;
+            case CROSS_LEFT:
+            case CROSS_RIGHT:
+                param = 1 - param;
+        }
+    }
+
+    if (param == 1)
+        return INSIDE;
+    else
+        return OUTSIDE;
+}
+
+void fill(cv::Mat& image, double vertices[4][2], int scale,
+          const cv::Vec3b& color, double minX, double maxY) {
+    double min_x = vertices[0][0], min_y = vertices[0][1];
+    double max_x = vertices[0][0], max_y = vertices[0][1];
+
+    for (int i = 1; i < 4; ++i) {
+        min_x = std::min(min_x, vertices[i][0]);
+        min_y = std::min(min_y, vertices[i][1]);
+        max_x = std::max(max_x, vertices[i][0]);
+        max_y = std::max(max_y, vertices[i][1]);
+    }
+
+    double step = 1. / (2 * scale);
+
+    for (double x = min_x; x <= max_x; x += step) {
+        for (double y = min_y; y <= max_y; y += step) {
+            PType pointType;
+            pointType = pInPolygonEOMode(x, y, vertices);
+            if (pointType == INSIDE) {
+                int xInt, yInt;
+                transformCoordinates(x, y, xInt, yInt, image.cols, image.rows,
+                                     scale, minX, maxY);
+                set_pixel(image, xInt, yInt, color);
+            }
+        }
+    }
+}

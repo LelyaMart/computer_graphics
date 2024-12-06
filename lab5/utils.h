@@ -27,4 +27,7 @@ void drawPolygon(cv::Mat& image, int vertices[8][2], const cv::Vec3b& color);
 void normalize(double& x, double& y, double& z);
 
 double computeNormal(double vertices[4][2]);
+
+void fill(cv::Mat& image, double vertices[][2], int scale,
+          const cv::Vec3b& color, double minX, double maxY);
 #endif  // UTILS_H
