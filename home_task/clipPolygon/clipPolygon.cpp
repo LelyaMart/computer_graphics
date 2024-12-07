@@ -141,7 +141,7 @@ std::vector<Point> weilerAzertonAlgorithm(double verticesFirst[][2],
     if (numIntersections1 == 0) {
         if (isPointInPolygon(verticesFirst[0][0], verticesFirst[0][1],
                              verticesSecond, numVerticesSecond)) {
-            return {};
+            return {cyclicList1};
         } else {
             return {cyclicList2};
         }
